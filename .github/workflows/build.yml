@@ -2,6 +2,10 @@ name: Build
 
 on:
   workflow_dispatch:
+    inputs:
+      url:
+        description: 'SamFW Direct Download Link'
+        required: true
   pull_request:
   push:
     branches:
@@ -47,7 +51,7 @@ jobs:
           sudo apt update
           DEBIAN_FRONTEND=noninteractive sudo apt install -yq \
             7zip attr ccache clang ffmpeg \
-            libbrotli-dev libgtest-dev libprotobuf-dev libunwind-dev libpcre2-dev \
+            libbrotli-dev libgtest-dev libprotobuf-dev libunwind-dev libpcre2-dev wget \
             libzstd-dev linux-modules-extra-$(uname -r) lld protobuf-compiler webp
           sudo modprobe erofs f2fs
           git config --global user.name "github-actions[bot]"
@@ -70,7 +74,8 @@ jobs:
       - name: Download stock firmwares
         run: |
           source ./buildenv.sh ${{ matrix.target }}
-          ./scripts/download_fw.sh
+          ./scripts/download_fw.sh --ignore-target
+          wget -q --no-check-certificate --content-disposition "${{ github.event.inputs.url }}" --directory-prefix="./out/fw/SM-S911B_EUX"
 
       - name: Extract stock firmwares
         run: |
