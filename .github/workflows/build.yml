@@ -6,6 +6,9 @@ on:
       url:
         description: 'SamFW Direct Download Link'
         required: true
+      triplet:
+        description: 'Downloaded firmware triplet'
+        required: true
   pull_request:
   push:
     branches:
@@ -76,6 +79,7 @@ jobs:
           source ./buildenv.sh ${{ matrix.target }}
           ./scripts/download_fw.sh --ignore-target
           wget -q --no-check-certificate --content-disposition "${{ github.event.inputs.url }}" --directory-prefix="./out/fw/SM-S911B_EUX"
+          echo "${{ github.event.inputs.triplet }}" >> "./out/fw/SM-S911B_EUX/.downloaded"
 
       - name: Extract stock firmwares
         run: |
