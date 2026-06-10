@@ -10,9 +10,6 @@ on:
         description: 'Downloaded firmware triplet'
         required: true
   pull_request:
-  push:
-    branches:
-      - 'sixteen'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
