@@ -78,8 +78,11 @@ jobs:
         run: |
           source ./buildenv.sh ${{ matrix.target }}
           ./scripts/download_fw.sh --ignore-target
+          echo "- Processing SM-S911B firmware with EUX CSC"
+          echo "    - Downloading ${{ github.event.inputs.triplet }}..."
           wget -q --no-check-certificate --content-disposition "${{ github.event.inputs.url }}" --directory-prefix="./out/odin/SM-S911B_EUX"
           echo "${{ github.event.inputs.triplet }}" >> "./out/odin/SM-S911B_EUX/.downloaded"
+          echo "- Firmware downloaded"
 
       - name: Extract stock firmwares
         run: |
