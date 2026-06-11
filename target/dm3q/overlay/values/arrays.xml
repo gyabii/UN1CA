@@ -130,6 +130,18 @@
         <item>1200</item>
         <item>1200</item>
     </integer-array>
+    <integer-array name="config_autoBrightnessDisplayValuesNits_doze">
+        <item>2</item>
+        <item>5</item>
+        <item>10</item>
+        <item>55</item>
+        <item>64</item>
+        <item>82</item>
+        <item>139</item>
+        <item>198</item>
+        <item>331</item>
+        <item>490</item>
+    </integer-array>
     <integer-array name="config_autoBrightnessLevels">
         <item>1</item>
         <item>2</item>
@@ -155,6 +167,17 @@
         <item>20000</item>
         <item>50000</item>
         <item>999999</item>
+    </integer-array>
+    <integer-array name="config_autoBrightnessLevels_doze">
+        <item>1</item>
+        <item>10</item>
+        <item>30</item>
+        <item>50</item>
+        <item>100</item>
+        <item>500</item>
+        <item>1000</item>
+        <item>2000</item>
+        <item>3000</item>
     </integer-array>
     <string-array name="config_mobile_hotspot_provision_app">
         <item>com.samsung.unifiedtp</item>
