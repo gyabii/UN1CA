@@ -3,12 +3,27 @@ name: Build
 on:
   workflow_dispatch:
     inputs:
-      url:
-        description: 'SamFW Direct Download Link'
+      url_dm1q:
+        description: 'S23 SamFW Direct Download Link'
         required: true
-      triplet:
+      url_dm2q:
+        description: 'S23+ SamFW Direct Download Link'
+        required: true
+      url_dm3q:
+        description: 'S23U SamFW Direct Download Link'
+        required: true
+      triplet_dm1q:
         description: 'Downloaded firmware triplet'
         required: true
+        default: "S911BXXS9EZCI/S911BOXM9EZCI/S911BXXS9EZCI"
+      triplet_dm2q:
+        description: 'Downloaded firmware triplet'
+        required: true
+        default: "S916BXXS9EZCI/S916BOXM9EZCI/S916BXXS9EZCI"
+      triplet_dm3q:
+        description: 'Downloaded firmware triplet'
+        required: true
+        default: "S918BXXS9EZCI/S918BOXM9EZCI/S918BXXS9EZCI"
   pull_request:
 
 concurrency:
@@ -22,7 +37,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target: [dm1q]
+        target: [dm1q, dm2q, dm3q]
 
     steps:
       - name: Checkout repo
@@ -75,15 +90,28 @@ jobs:
         run: |
           source ./buildenv.sh ${{ matrix.target }}
           ./scripts/download_fw.sh --ignore-target
-          echo "- Processing SM-S911B firmware with EUX CSC"
-          echo "    - Downloading ${{ github.event.inputs.triplet }}..."
-          mkdir -p ./out/odin/SM-S911B_EUX
-          wget -q --no-check-certificate --content-disposition "${{ github.event.inputs.url }}" --directory-prefix="./out/odin/SM-S911B_EUX" || echo "Firmware download failed"
-          touch ./out/odin/SM-S911B_EUX/.downloaded
-          echo "${{ github.event.inputs.triplet }}" >> "./out/odin/SM-S911B_EUX/.downloaded"
-          ZIP_FILE="$(find "out/odin/SM-S911B_EUX" -name "*.zip" | sort -r | head -n 1)"
+          if [[ "${{ matrix.target }}" == "dm1q" ]]; then
+            MODEL="SM-S911B"
+            TRIPLET="${{ github.event.inputs.triplet_dm1q }}"
+            TARGET_URL="${{ github.event.inputs.url_dm1q }}"
+          elif [[ "${{ matrix.target }}" == "dm2q" ]]; then
+            MODEL="SM-S916B"
+            TRIPLET="${{ github.event.inputs.triplet_dm2q }}"
+            TARGET_URL="${{ github.event.inputs.url_dm2q }}"
+          elif [[ "${{ matrix.target }}" == "dm3q" ]]; then
+            MODEL="SM-S918B"
+            TRIPLET="${{ github.event.inputs.triplet_dm3q }}"
+            TARGET_URL="${{ github.event.inputs.url_dm3q }}"
+          fi
+          echo "- Processing ${MODEL} firmware with EUX CSC"
+          echo "    - Downloading ${TRIPLET}..."
+          mkdir -p "./out/odin/${MODEL}_EUX"
+          wget -q --no-check-certificate --content-disposition "${TARGET_URL}" --directory-prefix="./out/odin/${MODEL}_EUX"
+          touch "./out/odin/${MODEL}_EUX/.downloaded"
+          echo "${TRIPLET}" >> "./out/odin/${MODEL}_EUX/.downloaded"
+          ZIP_FILE="$(find "out/odin/${MODEL}_EUX" -name "*.zip" | sort -r | head -n 1)"
           echo "- Extracting $(basename "$ZIP_FILE")..."
-          unzip -o "$ZIP_FILE" -d "out/odin/SM-S911B_EUX" && rm -rf "$ZIP_FILE"
+          unzip -o "$ZIP_FILE" -d "out/odin/${MODEL}_EUX" && rm -rf "$ZIP_FILE"
 
       - name: Extract stock firmwares
         run: |
