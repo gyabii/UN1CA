@@ -91,7 +91,6 @@ jobs:
       - name: Download stock firmwares
         run: |
           source ./buildenv.sh ${{ matrix.target }}
-          ./scripts/download_fw.sh --ignore-target
           if [[ "${{ matrix.target }}" == "dm1q" ]]; then
             MODEL="SM-S911B"
             TRIPLET="${{ github.event.inputs.triplet_dm1q }}"
@@ -114,6 +113,7 @@ jobs:
           ZIP_FILE="$(find "out/odin/${MODEL}_EUX" -name "*.zip" | sort -r | head -n 1)"
           echo "- Extracting $(basename "$ZIP_FILE")..."
           unzip -o "$ZIP_FILE" -d "out/odin/${MODEL}_EUX" >/dev/null 2>&1 && rm -rf "$ZIP_FILE"
+          ./scripts/download_fw.sh --ignore-target
 
       - name: Extract stock firmwares
         run: |
