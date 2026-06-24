@@ -113,7 +113,7 @@ jobs:
           echo "${TRIPLET}" >> "./out/odin/${MODEL}_EUX/.downloaded"
           ZIP_FILE="$(find "out/odin/${MODEL}_EUX" -name "*.zip" | sort -r | head -n 1)"
           echo "- Extracting $(basename "$ZIP_FILE")..."
-          unzip -o "$ZIP_FILE" -d "out/odin/${MODEL}_EUX" && rm -rf "$ZIP_FILE"
+          unzip -o "$ZIP_FILE" -d "out/odin/${MODEL}_EUX" >/dev/null 2>&1 && rm -rf "$ZIP_FILE"
 
       - name: Extract stock firmwares
         run: |
