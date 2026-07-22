@@ -1,0 +1,5 @@
+is_substring("S916BXXSA", getprop("gsm.version.baseband")) && abort("ERROR: This package requires BIT 9 OneUI 8 firmware or BIT 8 OneUI 8/7 firmware.");
+is_substring("S916BXXUA", getprop("gsm.version.baseband")) && abort("ERROR: This package requires BIT 9 OneUI 8 firmware or BIT 8 OneUI 8/7 firmware.");
+is_substring("S916BXXU9F", getprop("gsm.version.baseband")) && abort("ERROR: This package requires BIT 9 OneUI 8 firmware or BIT 8 OneUI 8/7 firmware.");
+is_substring("S916BXXU8F", getprop("gsm.version.baseband")) && abort("ERROR: This package requires BIT 9 OneUI 8 firmware or BIT 8 OneUI 8/7 firmware.");
+is_substring("S916BXX", getprop("ro.boot.bootloader")) && verify_no_downgrade(getprop("ro.boot.bootloader"), "S916BXXU8DYD9") && abort("E3003: This package requires at least OneUI 7 firmware.");
