@@ -2,7 +2,6 @@
   <img loading="lazy" src="readme-res/banner.png"/>
 </h1>
 <p align="center">
-<<<<<<< HEAD
   <a href="https://github.com/gyabii/UN1CA/blob/sixteen/LICENSE"><img loading="lazy" src="https://img.shields.io/github/license/gyabii/UN1CA?style=for-the-badge&logo=github"/></a>
   <a href="https://github.com/gyabii/UN1CA/commits/sixteen"><img loading="lazy" src="https://img.shields.io/github/last-commit/gyabii/UN1CA/sixteen?style=for-the-badge"/></a>
   <a href="https://github.com/gyabii/UN1CA/stargazers"><img loading="lazy" src="https://img.shields.io/github/stars/gyabii/UN1CA?style=for-the-badge"/></a>
