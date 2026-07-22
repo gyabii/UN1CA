@@ -136,17 +136,23 @@ jobs:
             echo "TMP_DIR=$TMP_DIR"
           } >> "$GITHUB_ENV"
           if [[ "${{ matrix.target }}" == "dm1q" ]]; then
-            MODEL="SM-S911B"
-            TRIPLET="${{ github.event.inputs.triplet_dm1q }}"
-            TARGET_URL="${{ github.event.inputs.url_dm1q }}"
+            {
+            echo "MODEL=SM-S911B"
+            echo "TRIPLET=${{ github.event.inputs.triplet_dm1q }}"
+            echo "TARGET_URL=${{ github.event.inputs.url_dm1q }}"
+            } >> "$GITHUB_ENV"
           elif [[ "${{ matrix.target }}" == "dm2q" ]]; then
-            MODEL="SM-S916B"
-            TRIPLET="${{ github.event.inputs.triplet_dm2q }}"
-            TARGET_URL="${{ github.event.inputs.url_dm2q }}"
+            {
+            echo "MODEL=SM-S916B"
+            echo "TRIPLET=${{ github.event.inputs.triplet_dm2q }}"
+            echo "TARGET_URL=${{ github.event.inputs.url_dm2q }}"
+            } >> "$GITHUB_ENV"
           elif [[ "${{ matrix.target }}" == "dm3q" ]]; then
-            MODEL="SM-S918B"
-            TRIPLET="${{ github.event.inputs.triplet_dm3q }}"
-            TARGET_URL="${{ github.event.inputs.url_dm3q }}"
+            {
+            echo "MODEL=SM-S918B"
+            echo "TRIPLET=${{ github.event.inputs.triplet_dm3q }}"
+            echo "TARGET_URL=${{ github.event.inputs.url_dm3q }}"
+            } >> "$GITHUB_ENV"
           fi
           sed -e "/Automatically/d" -e "s/\"//g" "$OUT_DIR/config.sh" >> "$GITHUB_ENV"
           echo "$TOOLS_DIR/bin" >> "$GITHUB_PATH"
