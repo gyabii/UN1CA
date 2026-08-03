@@ -2,10 +2,29 @@ name: Build
 
 on:
   workflow_dispatch:
+    inputs:
+      url_dm1q:
+        description: 'S23 SamFW Direct Download Link'
+        required: true
+      url_dm2q:
+        description: 'S23+ SamFW Direct Download Link'
+        required: true
+      url_dm3q:
+        description: 'S23U SamFW Direct Download Link'
+        required: true
+      triplet_dm1q:
+        description: 'Downloaded firmware triplet'
+        required: true
+        default: "S911BXXS9EZCI/S911BOXM9EZCI/S911BXXS9EZCI"
+      triplet_dm2q:
+        description: 'Downloaded firmware triplet'
+        required: true
+        default: "S916BXXS9EZCI/S916BOXM9EZCI/S916BXXS9EZCI"
+      triplet_dm3q:
+        description: 'Downloaded firmware triplet'
+        required: true
+        default: "S918BXXS9EZCI/S918BOXM9EZCI/S918BXXS9EZCI"
   pull_request:
-  push:
-    branches:
-      - 'sixteen'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -18,11 +37,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target: [a52sxq, a53x, a73xq, b0q, g0q, m52xq, o1s, p3s, r0q, r9s, t2s]
+        target: [dm1q, dm2q, dm3q]
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           submodules: 'recursive'
 
@@ -46,14 +65,16 @@ jobs:
         run: |
           sudo apt update
           DEBIAN_FRONTEND=noninteractive sudo apt install -yq \
-            7zip attr ccache clang ffmpeg \
-            libbrotli-dev libgtest-dev libprotobuf-dev libunwind-dev libpcre2-dev \
+            attr ccache clang ffmpeg libbrotli-dev libbz2-dev \
+            libgtest-dev libprotobuf-dev libunwind-dev libpcre2-dev wget \
             libzstd-dev linux-modules-extra-$(uname -r) lld protobuf-compiler webp
           sudo modprobe erofs f2fs
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
           echo -n "${{ secrets.PLATFORM_KEY_PK8 }}" | base64 --decode > security/unica_platform.pk8
           echo -n "${{ secrets.PLATFORM_KEY_PEM }}" | base64 --decode > security/unica_platform.x509.pem
+          echo -n "${{ secrets.OTA_KEY_PK8 }}" | base64 --decode > security/unica_ota.pk8
+          echo -n "${{ secrets.OTA_KEY_PEM }}" | base64 --decode > security/unica_ota.x509.pem
 
       - name: Set up JDK 17
         uses: actions/setup-java@v5
@@ -70,7 +91,29 @@ jobs:
       - name: Download stock firmwares
         run: |
           source ./buildenv.sh ${{ matrix.target }}
-          ./scripts/download_fw.sh
+          if [[ "${{ matrix.target }}" == "dm1q" ]]; then
+            MODEL="SM-S911B"
+            TRIPLET="${{ github.event.inputs.triplet_dm1q }}"
+            TARGET_URL="${{ github.event.inputs.url_dm1q }}"
+          elif [[ "${{ matrix.target }}" == "dm2q" ]]; then
+            MODEL="SM-S916B"
+            TRIPLET="${{ github.event.inputs.triplet_dm2q }}"
+            TARGET_URL="${{ github.event.inputs.url_dm2q }}"
+          elif [[ "${{ matrix.target }}" == "dm3q" ]]; then
+            MODEL="SM-S918B"
+            TRIPLET="${{ github.event.inputs.triplet_dm3q }}"
+            TARGET_URL="${{ github.event.inputs.url_dm3q }}"
+          fi
+          echo "- Processing ${MODEL} firmware with EUX CSC"
+          echo "    - Downloading ${TRIPLET}..."
+          mkdir -p "./out/odin/${MODEL}_EUX"
+          wget -q --no-check-certificate --content-disposition "${TARGET_URL}" --directory-prefix="./out/odin/${MODEL}_EUX"
+          touch "./out/odin/${MODEL}_EUX/.downloaded"
+          echo "${TRIPLET}" >> "./out/odin/${MODEL}_EUX/.downloaded"
+          ZIP_FILE="$(find "out/odin/${MODEL}_EUX" -name "*.zip" | sort -r | head -n 1)"
+          echo "- Extracting $(basename "$ZIP_FILE")..."
+          unzip -o "$ZIP_FILE" -d "out/odin/${MODEL}_EUX" >/dev/null 2>&1 && rm -rf "$ZIP_FILE"
+          ./scripts/download_fw.sh --ignore-target
 
       - name: Extract stock firmwares
         run: |
@@ -80,4 +123,11 @@ jobs:
       - name: Build ROM
         run: |
           source ./buildenv.sh ${{ matrix.target }}
-          ./scripts/make_rom.sh
+          ./scripts/make_rom.sh -z
+
+      - name: Upload to GoFile
+        run: |
+          ZIP_FILE=$(find out -maxdepth 1 -type f -name "*sign.zip" | head -n 1)
+          RESPONSE=$(curl -s -F "file=@$ZIP_FILE" -F "token=${{ secrets.GOFILE_TOKEN }}" -F "folderId=${{ secrets.GOFILE_FOLDER }}" "https://upload-eu-par.gofile.io/uploadFile")
+          echo "Download link:"
+          echo "$RESPONSE" | jq -r '.data.downloadPage'
