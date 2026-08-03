@@ -5,7 +5,7 @@
   <a href="https://github.com/salvogiangri/UN1CA/blob/sixteen/LICENSE"><img loading="lazy" src="https://img.shields.io/github/license/salvogiangri/UN1CA?style=for-the-badge&logo=github"/></a>
   <a href="https://github.com/salvogiangri/UN1CA/commits/sixteen"><img loading="lazy" src="https://img.shields.io/github/last-commit/salvogiangri/UN1CA/sixteen?style=for-the-badge"/></a>
   <a href="https://github.com/salvogiangri/UN1CA/stargazers"><img loading="lazy" src="https://img.shields.io/github/stars/salvogiangri/UN1CA?style=for-the-badge"/></a>
-  <a href="https://github.com/salvogiangri/UN1CA/actions/workflows/build.yml"><img loading="lazy" src="https://img.shields.io/github/actions/workflow/status/salvogiangri/UN1CA/build.yml?style=for-the-badge"/></a>
+  <a href="https://github.com/salvogiangri/UN1CA/actions/workflows/ci.yml"><img loading="lazy" src="https://img.shields.io/github/actions/workflow/status/salvogiangri/UN1CA/ci.yml?style=for-the-badge"/></a>
   <a href="https://crowdin.com/project/UN1CA"><img loading="lazy" src="https://img.shields.io/badge/Crowdin-263238?style=for-the-badge&logo=crowdin"/></a>
 </p>
 <p align="center">UN1CA <i>(/ˈu.ni.ka/)</i> is a work-in-progress custom firmware for Samsung Galaxy devices.</p>
@@ -106,6 +106,3 @@ A special thanks goes to the following for their invaluable contributions in no 
 - **[iDrinkCoffee](https://github.com/iDrinkCoffee-TG)** and **[RisenID](https://github.com/RisenID)** for their support
 - **[LineageOS Team](https://www.lineageos.org/)** for their original [OTA updater implementation](https://github.com/LineageOS/android_packages_apps_Updater)
 - *All the UN1CA project forks, contributors, testers and users ❤️*
-
-# Stargazers over time
-[![Stargazers over time](https://starchart.cc/salvogiangri/UN1CA.svg)](https://starchart.cc/salvogiangri/UN1CA)

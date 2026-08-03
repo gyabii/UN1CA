@@ -1,4 +1,4 @@
-name: Build
+name: CI
 
 on:
   workflow_dispatch:
@@ -24,20 +24,57 @@ on:
         description: 'Downloaded firmware triplet'
         required: true
         default: "S918BXXS9EZCI/S918BOXM9EZCI/S918BXXS9EZCI"
-  pull_request:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
+  shellcheck:
+    name: Shellcheck
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v7
+
+      - name: Run shellcheck
+        run: |
+          CODE=0
+          while IFS= read -r f; do
+            shellcheck -e SC1090,SC1091 -s bash "$f" || CODE=1
+          done < <(find platform scripts target unica -name "*.sh" -not -name "*ssi.sh" -not -name "config.sh" -not -name "sff.sh")
+          exit $CODE
+
+  generate-matrix:
+    name: Generate matrix
+    needs: shellcheck
+    runs-on: ubuntu-24.04
+
+    outputs:
+      matrix: ${{ steps.generate-matrix.outputs.matrix }}
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v7
+
+      - name: Generate CI matrix
+        id: generate-matrix
+        run: |
+          matrix="$(find target -mindepth 1 -maxdepth 1 -type d -printf '%f\n' \
+            | sort | jq -R -s -c 'split("\n") | map(select(length > 0))')"
+          echo "$matrix"
+          echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
+
   build:
+    name: Build
+    needs: [shellcheck, generate-matrix]
     runs-on: ubuntu-24.04
 
     strategy:
       fail-fast: false
       matrix:
-        target: [dm1q, dm2q, dm3q]
+        target: ${{ fromJSON(needs.generate-matrix.outputs.matrix) }}
 
     steps:
       - name: Checkout repo
@@ -83,29 +120,49 @@ jobs:
           java-version: '17'
           cache: 'gradle'
 
-      - name: Build dependencies
+      - name: Generate build config
         run: |
           source ./buildenv.sh ${{ matrix.target }}
-          ./scripts/build_dependencies.sh
-
-      - name: Download stock firmwares
-        run: |
-          source ./buildenv.sh ${{ matrix.target }}
+          {
+            echo "DEBUG=$DEBUG"
+            echo "SRC_DIR=$SRC_DIR"
+            echo "OUT_DIR=$OUT_DIR"
+            echo "ODIN_DIR=$ODIN_DIR"
+            echo "FW_DIR=$FW_DIR"
+            echo "TOOLS_DIR=$TOOLS_DIR"
+            echo "APKTOOL_DIR=$APKTOOL_DIR"
+            echo "WORK_DIR=$WORK_DIR"
+            echo "TMP_DIR=$TMP_DIR"
+          } >> "$GITHUB_ENV"
           if [[ "${{ matrix.target }}" == "dm1q" ]]; then
-            MODEL="SM-S911B"
-            TRIPLET="${{ github.event.inputs.triplet_dm1q }}"
-            TARGET_URL="${{ github.event.inputs.url_dm1q }}"
+            {
+            echo "MODEL=SM-S911B"
+            echo "TRIPLET=${{ github.event.inputs.triplet_dm1q }}"
+            echo "TARGET_URL=${{ github.event.inputs.url_dm1q }}"
+            } >> "$GITHUB_ENV"
           elif [[ "${{ matrix.target }}" == "dm2q" ]]; then
-            MODEL="SM-S916B"
-            TRIPLET="${{ github.event.inputs.triplet_dm2q }}"
-            TARGET_URL="${{ github.event.inputs.url_dm2q }}"
+            {
+            echo "MODEL=SM-S916B"
+            echo "TRIPLET=${{ github.event.inputs.triplet_dm2q }}"
+            echo "TARGET_URL=${{ github.event.inputs.url_dm2q }}"
+            } >> "$GITHUB_ENV"
           elif [[ "${{ matrix.target }}" == "dm3q" ]]; then
-            MODEL="SM-S918B"
-            TRIPLET="${{ github.event.inputs.triplet_dm3q }}"
-            TARGET_URL="${{ github.event.inputs.url_dm3q }}"
+            {
+            echo "MODEL=SM-S918B"
+            echo "TRIPLET=${{ github.event.inputs.triplet_dm3q }}"
+            echo "TARGET_URL=${{ github.event.inputs.url_dm3q }}"
+            } >> "$GITHUB_ENV"
           fi
+          sed -e "/Automatically/d" -e "s/\"//g" "$OUT_DIR/config.sh" >> "$GITHUB_ENV"
+          echo "$TOOLS_DIR/bin" >> "$GITHUB_PATH"
+
+      - name: Build dependencies
+        run: ./scripts/build_dependencies.sh
+        
+      - name: Download target firmware
+        run: |
           echo "- Processing ${MODEL} firmware with EUX CSC"
-          echo "    - Downloading ${TRIPLET}..."
+          echo "    - Downloading firmware..."
           mkdir -p "./out/odin/${MODEL}_EUX"
           wget -q --no-check-certificate --content-disposition "${TARGET_URL}" --directory-prefix="./out/odin/${MODEL}_EUX"
           touch "./out/odin/${MODEL}_EUX/.downloaded"
@@ -113,16 +170,20 @@ jobs:
           ZIP_FILE="$(find "out/odin/${MODEL}_EUX" -name "*.zip" | sort -r | head -n 1)"
           echo "- Extracting $(basename "$ZIP_FILE")..."
           unzip -o "$ZIP_FILE" -d "out/odin/${MODEL}_EUX" >/dev/null 2>&1 && rm -rf "$ZIP_FILE"
-          ./scripts/download_fw.sh --ignore-target
+
+      - name: Download source firmware
+        uses: nick-fields/retry@v4
+        with:
+          timeout_minutes: 60
+          max_attempts: 3
+          retry_on: error
+          command: ./scripts/download_fw.sh --ignore-target
 
       - name: Extract stock firmwares
-        run: |
-          source ./buildenv.sh ${{ matrix.target }}
-          ./scripts/extract_fw.sh
+        run: ./scripts/extract_fw.sh
 
       - name: Build ROM
         run: |
-          source ./buildenv.sh ${{ matrix.target }}
           ./scripts/make_rom.sh -z
 
       - name: Upload to GoFile
