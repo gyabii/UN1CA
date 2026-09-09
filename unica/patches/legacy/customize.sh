@@ -119,12 +119,26 @@ PATCHED=false
 # - Add ro.surface_flinger.game_default_frame_rate_override if missing
 BACKPORT_SF_PROPS
 
-# Support legacy Camera HAL (pre-API 34)
-# - Some legacy devices (e.g. r8q) expect GPS tags to be non-null
+# Pre-API 34
+# - Revert commit b0551be: "Camera: Remove GPS_LOCATION if set is called with null"
+#   (https://android.googlesource.com/platform/frameworks/base/+/b0551beb8dab6e399179fcc6525407237fc8ee56%5E%21/#F0)
+#
+# Pre-API 35
+# - Add back SECOND_PICTURE_CONFIG camera feature support
 if [ "$TARGET_PLATFORM_SDK_VERSION" -lt "34" ]; then
     PATCHED=true
     APPLY_PATCH "system" "system/framework/framework.jar" \
         "$MODPATH/camera/framework.jar/0001-Backport-legacy-CameraMetadataNative-code.patch"
+fi
+if [ "$TARGET_PLATFORM_SDK_VERSION" -lt "35" ]; then
+    PATCHED=true
+    if $TARGET_CAMERA_SUPPORT_MASS_APP_FLAVOR; then
+        APPLY_PATCH "system" "system/priv-app/SamsungCamera/SamsungCamera.apk" \
+            "$MODPATH/camera_mass/SamsungCamera.apk/0001-Backport-CONTROL_AVAILABLE_FEATURE_SECOND_PICTURE_CO.patch"
+    else
+        APPLY_PATCH "system" "system/priv-app/SamsungCamera/SamsungCamera.apk" \
+            "$MODPATH/camera/SamsungCamera.apk/0001-Backport-CONTROL_AVAILABLE_FEATURE_SECOND_PICTURE_CO.patch"
+    fi
 fi
 
 # Support legacy Face HAL (pre-API 34)
@@ -414,20 +428,10 @@ if [ "$TARGET_PLATFORM_SDK_VERSION" -lt "35" ]; then
     fi
 fi
 
-# Support SECOND_PICTURE_CONFIG camera feature (pre-API 35)
-if [ "$TARGET_PLATFORM_SDK_VERSION" -lt "35" ]; then
-    PATCHED=true
-    if $TARGET_CAMERA_SUPPORT_MASS_APP_FLAVOR; then
-        APPLY_PATCH "system" "system/priv-app/SamsungCamera/SamsungCamera.apk" \
-            "$MODPATH/camera_mass/SamsungCamera.apk/0001-Backport-CONTROL_AVAILABLE_FEATURE_SECOND_PICTURE_CO.patch"
-    else
-        APPLY_PATCH "system" "system/priv-app/SamsungCamera/SamsungCamera.apk" \
-            "$MODPATH/camera/SamsungCamera.apk/0001-Backport-CONTROL_AVAILABLE_FEATURE_SECOND_PICTURE_CO.patch"
-    fi
-fi
-
 # Support OMX hardware video codecs (pre-API 35)
-# https://android.googlesource.com/platform/frameworks/av/+/android-16.0.0_r2/media/libstagefright/omx/OMXNodeInstance.cpp#1687
+# - Replace COLOR_FormatYUV420Flexible with COLOR_FormatSurface/OMX_COLOR_FormatAndroidOpaque
+#   (https://android.googlesource.com/platform/frameworks/av/+/android-16.0.0_r2/media/libstagefright/omx/OMXNodeInstance.cpp#1687)
+# - Disable ACodec HEVC limitation for RECORDING_MODE_HDR10_PLUS/RECORDING_MODE_PRO_HDR10_PLUS
 if [ "$TARGET_PLATFORM_SDK_VERSION" -lt "35" ]; then
     if ! find "$WORK_DIR/vendor/etc" -maxdepth 1 -type f -name "media_codecs*.xml" ! -name "*performance*" -exec cat {} + | \
             grep -q -P -z '<MediaCodec\s[^>]*name="c2\.(?!android\.|sec\.)[^"]*"(?:(?!</?MediaCodec[\s>])[\s\S])*?="video/'; then
@@ -442,6 +446,24 @@ if [ "$TARGET_PLATFORM_SDK_VERSION" -lt "35" ]; then
             'configCodec(Lcom/samsung/android/sum/core/message/Message;)V' \
             'const v4, 0x7f420888' \
             'const v4, 0x7f000789'
+        if xxd -p -c 0 "$WORK_DIR/system/system/lib/libstagefright.so" | grep -q "ceec002848d1724c0620"; then
+            HEX_PATCH "$WORK_DIR/system/system/lib/libstagefright.so" \
+                "ceec002848d1724c0620" "ceec002848e0724c0620"
+        elif xxd -p -c 0 "$WORK_DIR/system/system/lib/libstagefright.so" | grep -q "aaea002879d1264c0620"; then
+            HEX_PATCH "$WORK_DIR/system/system/lib/libstagefright.so" \
+                "aaea002879d1264c0620" "aaea002879e0264c0620"
+        else
+            ABORT "No known patch available for the supplied libstagefright.so"
+        fi
+        if xxd -p -c 0 "$WORK_DIR/system/system/lib64/libstagefright.so" | grep -q "70690594205100347a9a40f9"; then
+            HEX_PATCH "$WORK_DIR/system/system/lib64/libstagefright.so" \
+                "70690594205100347a9a40f9" "706905941f2003d57a9a40f9"
+        elif xxd -p -c 0 "$WORK_DIR/system/system/lib64/libstagefright.so" | grep -q "864d0594604d00347a9a40f9"; then
+            HEX_PATCH "$WORK_DIR/system/system/lib64/libstagefright.so" \
+                "864d0594604d00347a9a40f9" "864d05941f2003d57a9a40f9"
+        else
+            ABORT "No known patch available for the supplied libstagefright.so"
+        fi
         if [ -f "$WORK_DIR/system/system/priv-app/GlobalPostProcMgr/GlobalPostProcMgr.apk" ]; then
             SMALI_PATCH "system" "system/priv-app/GlobalPostProcMgr/GlobalPostProcMgr.apk" \
                 "smali/com/samsung/android/sum/core/filter/EncoderFilter.smali" "replace" \
