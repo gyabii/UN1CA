@@ -3,15 +3,6 @@ name: CI
 on:
   workflow_dispatch:
     inputs:
-      url_dm1q:
-        description: 'S23 SamFW Direct Download Link'
-        required: true
-      url_dm2q:
-        description: 'S23+ SamFW Direct Download Link'
-        required: true
-      url_dm3q:
-        description: 'S23U SamFW Direct Download Link'
-        required: true
       triplet_dm1q:
         description: 'Downloaded firmware triplet'
         required: true
@@ -104,8 +95,9 @@ jobs:
           DEBIAN_FRONTEND=noninteractive sudo apt install -yq \
             attr ccache clang ffmpeg libbrotli-dev libbz2-dev \
             libgtest-dev libprotobuf-dev libunwind-dev libpcre2-dev wget \
-            libzstd-dev linux-modules-extra-$(uname -r) lld protobuf-compiler webp
+            libzstd-dev linux-modules-extra-$(uname -r) lld protobuf-compiler webp python3-pip
           sudo modprobe erofs f2fs
+          pip install gdown
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
           echo -n "${{ secrets.PLATFORM_KEY_PK8 }}" | base64 --decode > security/unica_platform.pk8
@@ -138,19 +130,19 @@ jobs:
             {
             echo "MODEL=SM-S911B"
             echo "TRIPLET=${{ github.event.inputs.triplet_dm1q }}"
-            echo "TARGET_URL=${{ github.event.inputs.url_dm1q }}"
+            echo "TARGET_URL=${{ secrets.DL_LINK_DM1Q }}"
             } >> "$GITHUB_ENV"
           elif [[ "${{ matrix.target }}" == "dm2q" ]]; then
             {
             echo "MODEL=SM-S916B"
             echo "TRIPLET=${{ github.event.inputs.triplet_dm2q }}"
-            echo "TARGET_URL=${{ github.event.inputs.url_dm2q }}"
+            echo "TARGET_URL=${{ secrets.DL_LINK_DM2Q }}"
             } >> "$GITHUB_ENV"
           elif [[ "${{ matrix.target }}" == "dm3q" ]]; then
             {
             echo "MODEL=SM-S918B"
             echo "TRIPLET=${{ github.event.inputs.triplet_dm3q }}"
-            echo "TARGET_URL=${{ github.event.inputs.url_dm3q }}"
+            echo "TARGET_URL=${{ secrets.DL_LINK_DM3Q }}"
             } >> "$GITHUB_ENV"
           fi
           sed -e "/Automatically/d" -e "s/\"//g" "$OUT_DIR/config.sh" >> "$GITHUB_ENV"
@@ -164,11 +156,11 @@ jobs:
           echo "- Processing ${MODEL} firmware with EUX CSC"
           echo "    - Downloading firmware..."
           mkdir -p "./out/odin/${MODEL}_EUX"
-          wget -q --no-check-certificate --content-disposition "${TARGET_URL}" --directory-prefix="./out/odin/${MODEL}_EUX"
+          ZIP_FILE="./out/odin/${MODEL}_EUX/$(echo \"$TRIPLET\" | cut -c 1-13).zip"
+          gdown "${TARGET_URL}" -O "$ZIP_FILE" >/dev/null 2>&1
           touch "./out/odin/${MODEL}_EUX/.downloaded"
           echo "${TRIPLET}" >> "./out/odin/${MODEL}_EUX/.downloaded"
-          ZIP_FILE="$(find "out/odin/${MODEL}_EUX" -name "*.zip" | sort -r | head -n 1)"
-          echo "- Extracting $(basename "$ZIP_FILE")..."
+          echo "- Extracting $(basename \"$ZIP_FILE\")..."
           unzip -o "$ZIP_FILE" -d "out/odin/${MODEL}_EUX" >/dev/null 2>&1 && rm -rf "$ZIP_FILE"
 
       - name: Download source firmware
