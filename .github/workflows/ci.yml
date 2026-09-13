@@ -94,6 +94,7 @@ jobs:
           echo -n "${{ secrets.PLATFORM_KEY_PEM }}" | base64 --decode > security/unica_platform.x509.pem
           echo -n "${{ secrets.OTA_KEY_PK8 }}" | base64 --decode > security/unica_ota.pk8
           echo -n "${{ secrets.OTA_KEY_PEM }}" | base64 --decode > security/unica_ota.x509.pem
+          echo -n "${{ secrets.COOKIES }}" | base64 --decode >> cookies.txt
 
       - name: Set up JDK 17
         uses: actions/setup-java@v6
@@ -147,7 +148,7 @@ jobs:
           echo "    - Downloading firmware..."
           mkdir -p "./out/odin/${MODEL}_EUX"
           ZIP_FILE="./out/odin/${MODEL}_EUX/$(echo \"$TRIPLET\" | cut -c 1-13).zip"
-          gdown "${TARGET_URL}" -O "$ZIP_FILE" >/dev/null 2>&1
+          gdown "${TARGET_URL}" -O "$ZIP_FILE" --cookies "cookies.txt" >/dev/null 2>&1
           touch "./out/odin/${MODEL}_EUX/.downloaded"
           echo "${TRIPLET}" >> "./out/odin/${MODEL}_EUX/.downloaded"
           echo "- Extracting $(basename \"$ZIP_FILE\")..."
