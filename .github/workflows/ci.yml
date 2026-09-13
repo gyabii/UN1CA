@@ -2,19 +2,6 @@ name: CI
 
 on:
   workflow_dispatch:
-    inputs:
-      triplet_dm1q:
-        description: 'Downloaded firmware triplet'
-        required: true
-        default: "S911BXXS9EZCI/S911BOXM9EZCI/S911BXXS9EZCI"
-      triplet_dm2q:
-        description: 'Downloaded firmware triplet'
-        required: true
-        default: "S916BXXS9EZCI/S916BOXM9EZCI/S916BXXS9EZCI"
-      triplet_dm3q:
-        description: 'Downloaded firmware triplet'
-        required: true
-        default: "S918BXXS9EZCI/S918BOXM9EZCI/S918BXXS9EZCI"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -129,19 +116,19 @@ jobs:
           if [[ "${{ matrix.target }}" == "dm1q" ]]; then
             {
             echo "MODEL=SM-S911B"
-            echo "TRIPLET=${{ github.event.inputs.triplet_dm1q }}"
+            echo "TRIPLET=S911BXXS9EZCI/S911BOXM9EZCI/S911BXXS9EZCI"
             echo "TARGET_URL=${{ secrets.DL_LINK_DM1Q }}"
             } >> "$GITHUB_ENV"
           elif [[ "${{ matrix.target }}" == "dm2q" ]]; then
             {
             echo "MODEL=SM-S916B"
-            echo "TRIPLET=${{ github.event.inputs.triplet_dm2q }}"
+            echo "TRIPLET=S916BXXS9EZCI/S916BOXM9EZCI/S916BXXS9EZCI"
             echo "TARGET_URL=${{ secrets.DL_LINK_DM2Q }}"
             } >> "$GITHUB_ENV"
           elif [[ "${{ matrix.target }}" == "dm3q" ]]; then
             {
             echo "MODEL=SM-S918B"
-            echo "TRIPLET=${{ github.event.inputs.triplet_dm3q }}"
+            echo "TRIPLET=S918BXXS9EZCI/S918BOXM9EZCI/S918BXXS9EZCI"
             echo "TARGET_URL=${{ secrets.DL_LINK_DM3Q }}"
             } >> "$GITHUB_ENV"
           fi
