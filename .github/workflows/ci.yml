@@ -147,11 +147,11 @@ jobs:
           echo "- Processing ${MODEL} firmware with EUX CSC"
           echo "    - Downloading firmware..."
           mkdir -p "./out/odin/${MODEL}_EUX"
-          ZIP_FILE="./out/odin/${MODEL}_EUX/$(echo \"$TRIPLET\" | cut -c 1-13).zip"
+          ZIP_FILE="./out/odin/${MODEL}_EUX/$(echo $TRIPLET | cut -c 1-13).zip"
           gdown "${TARGET_URL}" -O "$ZIP_FILE" --cookies "cookies.txt" >/dev/null 2>&1
           touch "./out/odin/${MODEL}_EUX/.downloaded"
           echo "${TRIPLET}" >> "./out/odin/${MODEL}_EUX/.downloaded"
-          echo "- Extracting $(basename \"$ZIP_FILE\")..."
+          echo "- Extracting $(basename $ZIP_FILE)..."
           unzip -o "$ZIP_FILE" -d "out/odin/${MODEL}_EUX" >/dev/null 2>&1 && rm -rf "$ZIP_FILE"
 
       - name: Download source firmware
